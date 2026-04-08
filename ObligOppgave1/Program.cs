@@ -3,13 +3,6 @@ using System.Threading.Tasks.Dataflow;
 
 namespace ObligOppgave1
 {
-    //Things still to be done:
-    //Beautify the console application
-    //Make bruker compatible with student and ansatt
-    //Make correct protection levels
-    //Convert code to LINQ where appropriate
-    //Testing
-
     class Program
     {
         static void Main(string[] args)
