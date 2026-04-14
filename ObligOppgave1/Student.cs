@@ -6,13 +6,39 @@ using System.Threading.Tasks;
 
 namespace ObligOppgave1
 {
-    public class Student : Bruker
+    public class Student : User
     {
-        public List<Kurs> Kurser { get; set; }
+        public List<Study> Grades { get; set; }
 
-        public Student(int id, string navn, string epost) : base (id, navn, epost)
+        public Student(string name, string email, int role) : base (name, email, role)
         {
-            Kurser = new List<Kurs>();
+            Grades = new List<Study>();
+        }
+        public Student(int id, string name, string email, int role, string password) : base (id, name, email, role, password)
+        {
+            Grades = new List<Study>();
+        }
+        public int GetGradeBycourseId(int courseId)
+        {
+            var grade = (from g in Grades where g.Course.Id == courseId select g).SingleOrDefault();
+            if (grade != null)
+            {
+                return grade.Grade;
+            }
+            return -1;
+        }
+        public void EditGradeBycourseId(int courseId, int newGrade)
+        {
+            if(newGrade < 1 | newGrade > 10)
+            {
+                throw new System.Exception();
+                return;
+            }
+            var grade = (from g in Grades where g.Course.Id == courseId select g).SingleOrDefault();
+            if (grade != null)
+            {
+                grade.Grade = newGrade;
+            }
         }
     }
 }
