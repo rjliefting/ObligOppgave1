@@ -18,21 +18,21 @@ namespace ObligOppgave1
             school.AddStudent(new Student("Rune", "rjliefting@uia.no", 1), "hei");
             school.AddEmployee(new Employee("Egil", "egilpost", "IT", 2), "hei");
             school.AddEmployee(new Employee("Kari", "kari@uia.no", "Bibliotek", 3), "hei");
-            school.AddCourse(new Course(110, "Objektorientert Programmering", 10, 150, school.GetEmployeeById(1)));
+            school.AddCourse(new Course(110, "Objektorientert Programmering", 10, 150, school.GetEmployeeById(1)!));
 
-            school.GetCourseById(110).Students.Add(school.GetStudentById(0));
-            school.AddStudentToCourse(school.GetStudentById(0), school.GetCourseById(110));
+            school.GetCourseById(110)!.Students.Add(school.GetStudentById(0)!);
+            school.AddStudentToCourse(school.GetStudentById(0)!, school.GetCourseById(110)!);
             string password = "";
             if (GetIntInput("Ønsker du å logge inn(1) eller registrere ny bruker(2) ?\n", 1, 2) == 2)
             {
                 Console.WriteLine("Velkommen som ny bruker! Vi trenger litt info for å registere deg inn i systemet.");
                 int role = GetIntInput("Er du student (1), faglærer (2) eller bibliotekar (3)?\n", 1, 3);
                 Console.WriteLine("Ditt navn:\n");
-                string name = Console.ReadLine();
+                string name = Console.ReadLine() ?? string.Empty;
                 Console.WriteLine("Din epost:\n");
-                string email = Console.ReadLine();
+                string email = Console.ReadLine() ?? string.Empty;
                 Console.WriteLine("Lag nytt passord:\n");
-                password = Console.ReadLine();
+                password = Console.ReadLine() ?? string.Empty;
 
                 switch (role)
                 {
@@ -46,9 +46,9 @@ namespace ObligOppgave1
                                 {
                                     Console.WriteLine("\n\nDa trenger vi litt ekstra info om deg:\n");
                                     Console.WriteLine("\nHva er hjemuniversitetet ditt?\n");
-                                    string homeUni = Console.ReadLine();
+                                    string homeUni = Console.ReadLine() ?? string.Empty;
                                     Console.WriteLine("\n\nHva er hjemlandet ditt?\n");
-                                    string nation = Console.ReadLine();
+                                    string nation = Console.ReadLine() ?? string.Empty;
                                     Console.WriteLine("\n\nHvilken dato begynner du som utvekslingsstudent?");
                                     int day = GetIntInput("Dag: ", 1, 31);
                                     int month = GetIntInput("Måned: ", 1, 12);
@@ -83,8 +83,13 @@ namespace ObligOppgave1
                     case 2:
                     case 3:
                         {
-                            Console.WriteLine("Hva er din avdeling?\n");
-                            string department = Console.ReadLine();
+                            string department = "Bibliotek";
+                            if(role == 2)
+                            {
+                                Console.WriteLine("Hva er din avdeling?\n");
+                                department = Console.ReadLine() ?? string.Empty;
+                            }
+                            
                             Employee newUser = new Employee(name, email, department, role);
                             school.AddEmployee(newUser, password);
                             Console.WriteLine("\nNy user registert. Din bruker-ID er" + newUser.Id);
@@ -97,25 +102,34 @@ namespace ObligOppgave1
             Console.WriteLine("\nLogg inn:\n");
 
             int userId = GetIntInput("Bruker-ID:\n");
+            User? user = school.GetUserById(userId);
+            while (user == null)
+            {
+                user = school.GetUserById(GetIntInput("Denne brukeren finnes ikke. Prøv på nytt:\n"));
+            }
             Console.WriteLine("Passord:\n");
-            password = Console.ReadLine();
+            password = Console.ReadLine() ?? string.Empty;
 
             while(!school.Login(userId, password))
             {
                 Console.WriteLine("Feil bruker-ID eller passord. Prøv igjen.");
                 userId = GetIntInput("Bruker-ID:\n");
                 Console.WriteLine("Passord:\n");
-                password = Console.ReadLine();
+                password = Console.ReadLine() ?? string.Empty;
             }
 
-            User user = school.GetUserById(userId);
-
+            
             switch (user.Role)
             {
                 case 1:
                     {
                         //student
-                        Student student = school.GetStudentById(user.Id);
+                        Student? student = school.GetStudentById(userId);
+
+                        if (student == null)
+                        {
+                            Console.WriteLine("Denne brukeren finnes ikke");
+                        }
                         Console.WriteLine("Her er menyen til deg som student:\n[1] Påmelding/Avmelding til/fra kurs\n[2] Se dine kurser\n[3] Se dine karakterer\n[4] Låne/Levere bøker\n[5] Søke på bøker\n[0]Avslutt");
                         int valg = -1;
                         while (valg != 0)
@@ -127,12 +141,17 @@ namespace ObligOppgave1
                                     {
                                         Console.WriteLine("Påmelding til/avmelding fra kurs\n");
                                         int courseId = GetIntInput("Skriv inn ID på kurs som du ønsker å melde deg til eller fra:\n");
-                                        Course course = school.GetCourseById(courseId);
-                                        if (course.Students.Contains(student))
+                                        Course? course = school.GetCourseById(courseId);
+                                        if(course == null)
+                                        {
+                                            Console.WriteLine("Dette kurset finnes ikke");
+                                            break;
+                                        }
+                                        if (course.Students.Contains(student!))
                                         {
                                             if(YesOrNo("Ønsker du å melde deg av fra kurs " + course.Name + "? (j/n):\n"))
                                             {
-                                                course.Students.Remove(student);
+                                                school.RemoveStudentFromCourse(student!.Id, course.Id);
                                                 Console.WriteLine("\nDu er blitt avmeldt fra kurset.\n");
                                                 break;
                                             }
@@ -144,7 +163,7 @@ namespace ObligOppgave1
                                         }
                                         if(YesOrNo("Ønsker du å påmelde deg til " + course.Name + "? (j/n):\n"))
                                         {
-                                            school.AddStudentToCourse(student, course);
+                                            school.AddStudentToCourse(student!, course);
                                             Console.WriteLine("\nDu er blitt påmeldt til kurset.\n");
                                         }
                                         break;
@@ -152,7 +171,7 @@ namespace ObligOppgave1
                                 case 2:
                                     {
                                         Console.WriteLine("Se dine kurs\nDu er oppmeldt til følgende kurs:\n");
-                                        foreach(Course c in school.GetCoursesByStudent(student))
+                                        foreach(Course c in school.GetCoursesByStudent(student!))
                                         {
                                             Console.WriteLine(c.Name);
                                         }
@@ -161,7 +180,7 @@ namespace ObligOppgave1
                                 case 3:
                                     {
                                         Console.WriteLine("Se dine karakterer:\n");
-                                        foreach(Study grade in student.Grades)
+                                        foreach(Study grade in student!.Grades)
                                         {
                                             Console.WriteLine(grade.Course.Name + ": " + grade.Grade);
                                         }
@@ -173,10 +192,10 @@ namespace ObligOppgave1
 
                                         if(GetIntInput("Ønsker du å låne (1) eller levere (2) bok?:\n", 1, 2) == 2)
                                         {
-                                            if (library.GetActiveLoansByUser(student).Count > 0)
+                                            if (library.GetActiveLoansByUser(student!).Count > 0)
                                             {
                                                 Console.WriteLine("Dine aktive lån:\n");
-                                                foreach (Book hits in library.GetActiveLoansByUser(student))
+                                                foreach (Book hits in library.GetActiveLoansByUser(student!))
                                                 {
                                                     PrintBook(hits);
                                                 }
@@ -186,7 +205,7 @@ namespace ObligOppgave1
                                                 Console.WriteLine("Du har ingen aktive lån");
                                             }
                                             int retur = GetIntInput("ID på bok: \n");
-                                            if(!library.BookExists(retur) | !library.GetActiveLoansByUser(student).Contains(library.GetBookById(retur)))
+                                            if(!library.BookExists(retur) | !library.GetActiveLoansByUser(student!).Contains(library.GetBookById(retur)))
                                             {
                                                 Console.WriteLine("Denne boka finnes ikke eller er ikke lånt av deg. Prøv på nytt");
                                                 break;
@@ -195,27 +214,28 @@ namespace ObligOppgave1
                                             Console.WriteLine("Bok levert.");
                                             break;
                                         }
-                                        
+
 
                                         int bookId = GetIntInput("Skriv ID på bok som du ønsker å låne:\n");
-                                        if (!library.BookExists(bookId))
+                                        try
                                         {
-                                            Console.WriteLine("Denne boka finnes ikke i vårt system");
-                                            break;
+                                            library.LoanBook(bookId, student!.Id);
+                                            Console.WriteLine("Lån opprettet. Fristen for å levere er: " + library.BookAvailability(bookId));
                                         }
-                                        if(library.BookAvailability(bookId) > DateTime.Now)
+                                        catch (InvalidOperationException ex)
                                         {
-                                            Console.WriteLine("Denne boka er dessverre ikke tilgjengelig nå. Den blir tilgjengelig fra og med " + library.BookAvailability(bookId));
-                                            break;
+                                            Console.WriteLine(ex);
                                         }
-                                        library.LoanBook(bookId, student.Id);
-                                        Console.WriteLine("Lån opprettet. Fristen for å levere er: " + library.BookAvailability(bookId));
+                                        catch (Library.BookNotFoundException ex)
+                                        {
+                                            Console.WriteLine(ex);
+                                        }
                                         break;
                                     }
                                 case 5:
                                     {
                                         Console.WriteLine("Søk på bøker.\nSkriv søkeord (Navn eller ID på bok):\n");
-                                        string search = Console.ReadLine();
+                                        string search = Console.ReadLine() ?? string.Empty;
                                         SearchBooks(library, search);
                                         break;
                                     }
@@ -234,12 +254,17 @@ namespace ObligOppgave1
                 case 2:
                     {
                         //faglærer
-                        Employee employee = school.GetEmployeeById(userId);
+                        Employee? employee = school.GetEmployeeById(userId);
+
+                        if (employee == null) 
+                        {
+                            Console.WriteLine("Denne brukeren finnes ikke");
+                        }
                         Console.WriteLine("Her er menyen din som faglærer:\n[1] Opprette kurs\n[2] Søke på kurs\n[3] Sette karakterer\n[4] Registere pensum til kurs\n[5] Låne/Levere bøker\n[6] Søke på bøker\n[0] Avslutt");
                         int valg = -1;
                         while (valg != 0)
                         {
-                            valg = GetIntInput("Skriv valg:\n", 0, 5);
+                            valg = GetIntInput("Skriv valg:\n", 0, 6);
                             switch (valg)
                             {
                                 case 1:
@@ -249,13 +274,13 @@ namespace ObligOppgave1
 
                                         while (courseId < 1 | school.CourseExists(courseId))
                                         {
-                                            Console.WriteLine("\nUgyldig inndata, eller et course med samme ID er allerede registrert (" + school.GetCourseById(courseId).Name + ").\n");
+                                            Console.WriteLine("\nUgyldig inndata, eller et course med samme ID er allerede registrert (" + school.GetCourseById(courseId)!.Name + ").\n");
                                             courseId = GetIntInput("course-ID:", 1);
                                         }
 
 
                                         Console.WriteLine("\nKursnavn: ");
-                                        string courseName = Console.ReadLine();
+                                        string courseName = Console.ReadLine() ?? string.Empty;
                                         while (courseName.Length == 0 | school.CourseExists(courseName))
                                         {
                                             Console.WriteLine("\nUgyldig inndata, eller dette kursnavnet er allerede tatt. Velg et annet navn.\n");
@@ -265,16 +290,16 @@ namespace ObligOppgave1
 
                                         int courseCapasity = GetIntInput("\nHvor mange studenter har kurset plass til?\n", 1);
 
-                                        Course newCourse = new Course(courseId, courseName, coursePoints, courseCapasity, school.GetEmployeeById(employee.Id));
+                                        Course newCourse = new Course(courseId, courseName, coursePoints, courseCapasity, employee!);
                                         school.AddCourse(newCourse);
 
-                                        Console.WriteLine("\ncourseet er registrert!");
+                                        Console.WriteLine("\nKurser er registrert!");
                                         break;
                                     }
                                 case 2:
                                     {
                                         Console.WriteLine("\n[4] SØK PÅ course\nSkriv course-ID eller coursenavn\n");
-                                        string search = Console.ReadLine();
+                                        string search = Console.ReadLine() ?? string.Empty;
                                         List<Course> result = school.SearchCourses(search);
 
                                         if (result.Count > 0)
@@ -304,14 +329,19 @@ namespace ObligOppgave1
                                 case 3:
                                     {
                                         Console.WriteLine("Sette karakterer");
-                                        Course course = school.GetCourseById(GetIntInput("Skriv ID på kurs som du vil sette karakter i:\n"));
+                                        Course? course = school.GetCourseById(GetIntInput("Skriv ID på kurs som du vil sette karakter i:\n"));
+                                        if(course == null)
+                                        {
+                                            Console.WriteLine("Dette kurset finnes ikke");
+                                            break;
+                                        }
                                         foreach(Student stu in course.Students)
                                         {
                                             Console.WriteLine("\nID: " + stu.Id);
                                             Console.WriteLine("Navn: " + stu.Name);
                                             Console.WriteLine("Karakter: " + stu.GetGradeBycourseId(course.Id));
                                         }
-                                        Student stud = school.GetStudentById(GetIntInput("Skriv ID på student for å endre karakter:\n"));
+                                        Student? stud = school.GetStudentById(GetIntInput("Skriv ID på student for å endre karakter:\n"));
                                         if(stud == null)
                                         {
                                             Console.WriteLine("Ugyldig inndata, eller student finnes ikke");
@@ -333,14 +363,14 @@ namespace ObligOppgave1
                                 case 4:
                                     {
                                         Console.WriteLine("Registrere pensum til kurs");
-                                        Course course = school.GetCourseById(GetIntInput("Skriv ID på kurs for å registrere pensum:\n"));
+                                        Course? course = school.GetCourseById(GetIntInput("Skriv ID på kurs for å registrere pensum:\n"));
                                         if(course == null)
                                         {
                                             Console.WriteLine("Dette kurset finnes ikke.");
                                             break;
                                         }
                                         Console.WriteLine("Skriv pensum:\n");
-                                        school.AddCurriculumToCourse(Console.ReadLine(), course);
+                                        school.AddCurriculumToCourse(Console.ReadLine() ?? String.Empty, course);
                                         break;
                                     }
                                 case 5:
@@ -349,10 +379,10 @@ namespace ObligOppgave1
 
                                         if (GetIntInput("Ønsker du å låne (1) eller levere (2) bok?:\n", 1, 2) == 2)
                                         {
-                                            if (library.GetActiveLoansByUser(employee).Count > 0)
+                                            if (library.GetActiveLoansByUser(employee!).Count > 0)
                                             {
                                                 Console.WriteLine("Dine aktive lån:\n");
-                                                foreach (Book treff in library.GetActiveLoansByUser(employee))
+                                                foreach (Book treff in library.GetActiveLoansByUser(employee!))
                                                 {
                                                     PrintBook(treff);
                                                 }
@@ -362,7 +392,7 @@ namespace ObligOppgave1
                                                 Console.WriteLine("Du har ingen aktive lån");
                                             }
                                             int retur = GetIntInput("ID på bok: \n");
-                                            if (!library.BookExists(retur) | !library.GetActiveLoansByUser(employee).Contains(library.GetBookById(retur)))
+                                            if (!library.BookExists(retur) | !library.GetActiveLoansByUser(employee!).Contains(library.GetBookById(retur)))
                                             {
                                                 Console.WriteLine("Denne boka finnes ikke eller er ikke lånt av deg. Prøv på nytt");
                                                 break;
@@ -372,26 +402,26 @@ namespace ObligOppgave1
                                             break;
                                         }
 
-
                                         int bookId = GetIntInput("Skriv ID på bok som du ønsker å låne:\n");
-                                        if (!library.BookExists(bookId))
+                                        try
                                         {
-                                            Console.WriteLine("Denne boka finnes ikke i vårt system");
-                                            break;
+                                            library.LoanBook(bookId, employee!.Id);
+                                            Console.WriteLine("Lån opprettet. Fristen for å levere er: " + library.BookAvailability(bookId));
                                         }
-                                        if (library.BookAvailability(bookId) > DateTime.Now)
+                                        catch(InvalidOperationException ex)
                                         {
-                                            Console.WriteLine("Denne boka er dessverre ikke tilgjengelig nå. Den blir tilgjengelig fra og med " + library.BookAvailability(bookId));
-                                            break;
+                                            Console.WriteLine(ex.Message);
                                         }
-                                        library.LoanBook(bookId, employee.Id);
-                                        Console.WriteLine("Lån opprettet. Fristen for å levere er: " + library.BookAvailability(bookId));
+                                        catch (Library.BookNotFoundException ex)
+                                        {
+                                            Console.WriteLine(ex.Message);
+                                        }
                                         break;
                                     }
                                 case 6:
                                     {
                                         Console.WriteLine("Søk på bøker.\nSkriv søkeord (Navn eller ID på bok):\n");
-                                        string search = Console.ReadLine();
+                                        string search = Console.ReadLine() ?? string.Empty;
                                         SearchBooks(library, search);
                                         break;
                                     }
@@ -418,19 +448,19 @@ namespace ObligOppgave1
                                 case 1:
                                     {
                                         Console.WriteLine("\nFor å registere ny bok, trenger vi litt info.\nHva er tittelen på boka?\n");
-                                        string title = Console.ReadLine();
+                                        string title = Console.ReadLine() ?? string.Empty;
                                         while (title == "")
                                         {
                                             Console.WriteLine("\nUgyldig inndata. Skriv tittel på nytt:\n");
-                                            title = Console.ReadLine();
+                                            title = Console.ReadLine() ?? string.Empty;
                                         }
 
                                         Console.WriteLine("\nHva hater forfatteren til boka?\n");
-                                        string author = Console.ReadLine();
+                                        string author = Console.ReadLine() ?? string.Empty;
                                         while (author == "")
                                         {
                                             Console.WriteLine("\nUgyldig inndata. Skriv navn på forfatter på nytt:\n");
-                                            author = Console.ReadLine();
+                                            author = Console.ReadLine() ?? string.Empty;
                                         }
 
                                         int year = GetIntInput("\nHvilket år ble boka publisert?\n");
@@ -480,7 +510,7 @@ namespace ObligOppgave1
         private static bool YesOrNo (string msg)
         {
             Console.WriteLine(msg);
-            string answer = Console.ReadLine();
+            string answer = Console.ReadLine() ?? string.Empty;
             if(answer.ToLower() == "j")
             {
                 return true;
@@ -492,7 +522,7 @@ namespace ObligOppgave1
             List<Book> result = library.SearchBooks(search);
             if (result.Count == 0)
             {
-                Console.WriteLine("\nIngen søkeresultater basert på søkeordet \"" + search + "+\"");
+                Console.WriteLine("\nIngen søkeresultater basert på søkeordet \"" + search + "\n");
                 return;
             }
 
@@ -528,12 +558,12 @@ namespace ObligOppgave1
             bool loop = true;
             while (loop)
             {
-                string input = Console.ReadLine();
+                string input = Console.ReadLine() ?? string.Empty;
                 try
                 {
                     return int.Parse(input);
                 }
-                catch
+                catch (FormatException)
                 {
                     Console.WriteLine("\nUgyldig svar. Prøv igjen:\n");
                 }
@@ -547,7 +577,7 @@ namespace ObligOppgave1
             bool loop = true;
             while (loop)
             {
-                string input = Console.ReadLine();
+                string input = Console.ReadLine() ?? string.Empty;
                 try
                 {
                     res = int.Parse(input);
@@ -560,7 +590,7 @@ namespace ObligOppgave1
                         return res;
                     }
                 }
-                catch
+                catch (FormatException)
                 {
                     Console.WriteLine("\nUgyldig svar. Prøv igjen:\n");
                 }
@@ -574,7 +604,7 @@ namespace ObligOppgave1
             bool loop = true;
             while (loop)
             {
-                string input = Console.ReadLine();
+                string input = Console.ReadLine() ?? string.Empty;
                 try
                 {
                     res = int.Parse(input);
@@ -587,7 +617,7 @@ namespace ObligOppgave1
                         return res;
                     }
                 }
-                catch
+                catch (FormatException)
                 {
                     Console.WriteLine("\nUgyldig svar. Prøv igjen:\n");
                 }

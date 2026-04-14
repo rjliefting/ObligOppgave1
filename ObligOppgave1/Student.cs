@@ -31,8 +31,7 @@ namespace ObligOppgave1
         {
             if(newGrade < 1 | newGrade > 10)
             {
-                throw new System.Exception();
-                return;
+                throw new Exception();
             }
             var grade = (from g in Grades where g.Course.Id == courseId select g).SingleOrDefault();
             if (grade != null)

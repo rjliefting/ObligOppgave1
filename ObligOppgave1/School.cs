@@ -16,7 +16,7 @@ namespace ObligOppgave1
             users = new List<User>();
             courses = new List<Course>();
         }
-        public User GetUserById(int userId)
+        public User? GetUserById(int userId)
         {
             var user = (from b in users where b.Id == userId select b).SingleOrDefault();
             if(user != null)
@@ -25,7 +25,7 @@ namespace ObligOppgave1
             }
             return null;
         }
-        public Student GetStudentById(int userId)
+        public Student? GetStudentById(int userId)
         {
             var user = (from b in users where b.Id == userId select b).SingleOrDefault();
             if (user != null)
@@ -35,7 +35,7 @@ namespace ObligOppgave1
             return null;
         }
 
-        public ExchStudent GetExchStudentById(int userId)
+        public ExchStudent? GetExchStudentById(int userId)
         {
             var user = (from b in users where b.Id == userId select b).SingleOrDefault();
             if (user != null)
@@ -44,7 +44,7 @@ namespace ObligOppgave1
             }
             return null;
         }
-        public Employee GetEmployeeById(int userId)
+        public Employee? GetEmployeeById(int userId)
         {
             var user = (from b in users where b.Id == userId select b).SingleOrDefault();
             if (user != null)
@@ -104,7 +104,7 @@ namespace ObligOppgave1
             }
             return false;
         }
-        public Course GetCourseById(int courseId)
+        public Course? GetCourseById(int courseId)
         {
             var course = (from c in courses where c.Id == courseId select c).SingleOrDefault();
             if(course != null)
@@ -145,7 +145,10 @@ namespace ObligOppgave1
             if(course != null)
             {
                 var student = (from s in course.Students where s.Id == studentId select s).SingleOrDefault();
-                course.Students.Remove(student);
+                if(student != null)
+                {
+                    course.Students.Remove(student);
+                }
             }
         }
         public List<Course> SearchCourses(string search)
@@ -203,7 +206,12 @@ namespace ObligOppgave1
         }
         public bool Login(int userId, string password)
         {
-            return GetUserById(userId).Login(password);
+            User? user = GetUserById(userId);
+            if(user == null)
+            {
+                return false;
+            }
+            return user.Login(password);
         }
     }
 }

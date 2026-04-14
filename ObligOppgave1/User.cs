@@ -35,6 +35,7 @@ namespace ObligOppgave1
             Email = email;
             Role = role;
             Id = -1;
+            Password = String.Empty;
         }
 
         public void EditEpost(string newEmail)

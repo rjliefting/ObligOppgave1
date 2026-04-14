@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -30,14 +31,17 @@ namespace ObligOppgave1
             return results;
         }
 
-        public Book GetBookById(int bokId)
+        public Book GetBookById(int bookId)
         {
-            var book = (from b in books where b.Id == bokId select b).SingleOrDefault();
+            var book = (from b in books where b.Id == bookId select b).SingleOrDefault();
             if (book != null)
             {
                 return book;
             }
-            return null;
+            else
+            {
+                throw new BookNotFoundException(bookId);
+            }
         }
         public void AddBook(Book newBook)
         {
@@ -61,13 +65,21 @@ namespace ObligOppgave1
         
         public void LoanBook(int bookId, int userId)
         {
-            var query = from book in books where book.Id == bookId select book;
-            foreach(Book book in query)
+            try
             {
-                if(book.Loan.End <= DateTime.Now)
+                Book book = GetBookById(bookId);
+                if (book.Loan.End <= DateTime.Now)
                 {
                     book.Loan = new Loan(bookId, userId, 30);
                 }
+                else
+                {
+                    throw new InvalidOperationException("Denne boka er ikke tilgjengelig for øyeblikket. Den blir tilgjengelig " + book.Loan.End);
+                }
+            }
+            catch(BookNotFoundException)
+            {
+                throw;
             }
         }
         public void ReturnBook(int bookId)
@@ -116,6 +128,10 @@ namespace ObligOppgave1
                 return book.History;
             }
             return new List<Loan>();
+        }
+        public class BookNotFoundException : Exception
+        {
+            public BookNotFoundException(int id) : base($"Bok med ID " + id + " var ikke funnet.") { }
         }
         public Library()
         {
