@@ -4,7 +4,7 @@ using System.Runtime;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks.Dataflow;
 
-namespace ObligOppgave1
+namespace ObligOppgave2
 {
     class Program
     {

@@ -5,7 +5,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ObligOppgave1
+namespace ObligOppgave2
 {
     public class Library
     {
